@@ -4,13 +4,7 @@ import API from '../api';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { getAuth } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import firebaseConfig from './config.js';
-
-// Firebase 초기화
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from './config.js';
 
 // Expo 푸시 알림 권한 요청 및 토큰 가져오기
 export async function registerForPushNotifications() {
@@ -62,17 +56,38 @@ export async function registerForPushNotifications() {
 // 토큰 서버에 저장
 export async function saveTokenToServer(token) {
     try {
-        // 현재 로그인한 사용자 정보 가져오기
-        const user = auth.currentUser;
-        const userId = user ? user.uid : (await AsyncStorage.getItem('userId')) || 'anonymous';
+        // 현재 로그인한 환자 정보 가져오기
+        const patientInfo = await AsyncStorage.getItem('patientInfo');
+        console.log('환자 정보 확인:', patientInfo);
+
+        const patientId = patientInfo ? JSON.parse(patientInfo).patient_id : null;
+
+        if (!patientId) {
+            console.error('환자 정보가 없습니다. 로그인이 필요합니다.');
+            return false;
+        }
+
+        console.log(`환자 ID ${patientId}에 대한 토큰 저장 시도`);
 
         // API를 통해 서버에 토큰 저장
-        await API.device.register(token, 'expo');
+        const response = await API.device.register(token, 'expo', patientId);
 
+        console.log('서버 응답:', JSON.stringify(response));
         console.log('토큰이 서버에 저장되었습니다:', token.substring(0, 10) + '...');
         return true;
     } catch (error) {
         console.error('토큰 저장 실패:', error);
+        console.error('에러 상세 정보:', error.message);
+
+        if (error.response) {
+            // 서버가 응답을 반환한 경우
+            console.error('서버 응답 상태:', error.response.status);
+            console.error('서버 응답 데이터:', error.response.data);
+        } else if (error.request) {
+            // 요청은 전송되었지만 응답을 받지 못한 경우
+            console.error('서버로부터 응답 없음:', error.request);
+        }
+
         return false;
     }
 }
