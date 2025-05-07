@@ -1,35 +1,18 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import config from '../app/config.ts';
 
-// API URL 설정 (환경변수 또는 기본값)
-// 실제 서버 IP 주소로 변경
-let BASE_URL;
-
-if (Platform.OS === 'android') {
-    // 안드로이드 에뮬레이터에서는 10.0.2.2를 사용하여 호스트 머신을 가리킴
-    BASE_URL = 'http://10.0.2.2:3000';
-} else if (Platform.OS === 'ios') {
-    // iOS 시뮬레이터에서는 localhost 또는 machine IP를 사용
-    BASE_URL = 'http://localhost:3000';
-} else {
-    // 웹이나 기타 플랫폼
-    BASE_URL = 'http://localhost:3000';
-}
-
-// 환경 변수가 있으면 그것을 사용
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || BASE_URL;
+// API URL 설정 - 전역 config에서 가져옴
+const API_BASE_URL = config.API_URL;
 
 console.log('API 기본 URL:', API_BASE_URL);
 
 // 기본 Axios 인스턴스 생성
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 10000, // 10초 타임아웃
-    headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-    },
+    timeout: config.API_CONFIG.timeout,
+    headers: config.API_CONFIG.headers,
 });
 
 // 요청 인터셉터 설정 (인증 토큰 추가)
@@ -67,7 +50,7 @@ apiClient.interceptors.response.use(
                 // refresh token으로 새 토큰 요청
                 const refreshToken = await AsyncStorage.getItem('refreshToken');
                 if (refreshToken) {
-                    const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+                    const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
                         refreshToken,
                     });
 
@@ -95,7 +78,7 @@ const API = {
     auth: {
         login: async (username, password) => {
             try {
-                const response = await apiClient.post('/api/auth/login', { username, password });
+                const response = await apiClient.post('/auth/login', { username, password });
 
                 if (response.data?.token) {
                     await AsyncStorage.setItem('authToken', response.data.token);
@@ -114,7 +97,7 @@ const API = {
         logout: async () => {
             try {
                 // 서버에 로그아웃 요청
-                await apiClient.post('/api/auth/logout');
+                await apiClient.post('/auth/logout');
                 // 로컬 토큰 삭제
                 await AsyncStorage.multiRemove(['authToken', 'refreshToken']);
                 return { success: true };
@@ -130,17 +113,17 @@ const API = {
     // 환자 관련 API
     patients: {
         getAll: async () => {
-            const response = await apiClient.get('/api/patients');
+            const response = await apiClient.get('/patients');
             return response.data;
         },
 
         getById: async (id) => {
-            const response = await apiClient.get(`/api/patients/${id}`);
+            const response = await apiClient.get(`/patients/${id}`);
             return response.data;
         },
 
         update: async (id, data) => {
-            const response = await apiClient.put(`/api/patients/${id}`, data);
+            const response = await apiClient.put(`/patients/${id}`, data);
             return response.data;
         },
     },
@@ -148,12 +131,12 @@ const API = {
     // 병실 관련 API
     rooms: {
         getAll: async () => {
-            const response = await apiClient.get('/api/rooms');
+            const response = await apiClient.get('/rooms');
             return response.data;
         },
 
         getByName: async (roomName) => {
-            const response = await apiClient.get(`/api/rooms/${roomName}`);
+            const response = await apiClient.get(`/rooms/${roomName}`);
             return response.data;
         },
     },
@@ -161,8 +144,20 @@ const API = {
     // 층별 정보 API
     floors: {
         getByFloor: async (floor) => {
-            const response = await apiClient.get(`/api/floors/${floor}`);
+            const response = await apiClient.get(`/floors/${floor}`);
             return response.data;
+        },
+
+        // 모든 층 정보 가져오기 추가
+        getAll: async () => {
+            try {
+                const response = await apiClient.get('/floors');
+                return response.data;
+            } catch (error) {
+                console.error('모든 층 정보 가져오기 실패:', error);
+                // 오류 시 빈 배열 반환
+                return [];
+            }
         },
     },
 
@@ -171,7 +166,7 @@ const API = {
         getEmergency: async () => {
             try {
                 // 백엔드의 낙상 사고 엔드포인트
-                const response = await apiClient.get('/api/fall-incidents');
+                const response = await apiClient.get('/fall-incidents');
 
                 // 백엔드 응답 형식에 맞게 데이터 변환
                 if (response.data && response.data.data) {
@@ -192,7 +187,7 @@ const API = {
                 return [];
             } catch (error) {
                 console.error('긴급 알림 가져오기 실패:', error);
-                console.error('API URL:', API_BASE_URL + '/api/fall-incidents');
+                console.error('API URL:', API_BASE_URL + '/fall-incidents');
                 // API 서버 오류 시 빈 배열 반환
                 return [];
             }
@@ -202,7 +197,7 @@ const API = {
         getEnvironmentalAlerts: async () => {
             try {
                 // 백엔드의 환경 경보 엔드포인트
-                const response = await apiClient.get('/api/environmental');
+                const response = await apiClient.get('/environmental');
 
                 // 정상 범위를 벗어난 병실만 필터링
                 if (response.data && response.data.data) {
@@ -220,7 +215,7 @@ const API = {
                 return [];
             } catch (error) {
                 console.error('환경 알림 가져오기 실패:', error);
-                console.error('API URL:', API_BASE_URL + '/api/environmental');
+                console.error('API URL:', API_BASE_URL + '/environmental');
                 // API 서버 오류 시 빈 배열 반환
                 return [];
             }
@@ -246,7 +241,7 @@ const API = {
         // 알림 확인 처리
         markAsRead: async (alertId) => {
             try {
-                const response = await apiClient.post(`/api/alerts/${alertId}/read`);
+                const response = await apiClient.post(`/alerts/${alertId}/read`);
                 return response.data;
             } catch (error) {
                 console.error('알림 확인 처리 실패:', error);
@@ -259,7 +254,7 @@ const API = {
         subscribeToAlerts: async (callback) => {
             try {
                 // 서버로부터 SSE 연결 설정
-                const eventSource = new EventSource(`${API_BASE_URL}/api/alerts/subscribe`);
+                const eventSource = new EventSource(`${API_BASE_URL}/alerts/subscribe`);
 
                 eventSource.onmessage = (event) => {
                     const data = JSON.parse(event.data);
@@ -299,7 +294,7 @@ const API = {
                 console.log('디바이스 등록 요청 데이터:', JSON.stringify(deviceInfo));
 
                 // 올바른 엔드포인트 경로
-                const response = await apiClient.post('/api/notifications/register-device', deviceInfo);
+                const response = await apiClient.post('/notifications/register-device', deviceInfo);
 
                 // 응답 로깅
                 console.log('디바이스 등록 응답:', JSON.stringify(response.data));
@@ -329,7 +324,7 @@ const API = {
                 if (!token) return { success: true };
 
                 // 올바른 엔드포인트 경로
-                const response = await apiClient.post('/api/notifications/unregister-device', { token });
+                const response = await apiClient.post('/notifications/unregister-device', { token });
 
                 // 토큰 정보 삭제
                 await AsyncStorage.removeItem('pushToken');

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import config from '../config';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -56,8 +57,8 @@ export default function Login() {
         }
 
         try {
-            // DB의 user 테이블을 확인하는 로그인 요청
-            const response = await axios.post('http://localhost:3000/api/auth/login', {
+            // API 엔드포인트 수정
+            const response = await axios.post(`${config.API_URL}/users/login`, {
                 user_email: email,
                 user_pw: password,
             });

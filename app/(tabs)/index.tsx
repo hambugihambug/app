@@ -2,9 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import API from '../../api';
-
-// 간단한 floors 데이터 (API로 대체 가능)
-const floors = ['1층', '2층', '3층', '4층', '5층'];
+import { Ionicons } from '@expo/vector-icons';
 
 // 알림 타입 정의
 interface EmergencyAlert {
@@ -15,12 +13,57 @@ interface EmergencyAlert {
     createdAt?: string;
 }
 
+// 층 타입 정의
+interface Floor {
+    id: number;
+    name: string;
+}
+
 export default function Main() {
     const router = useRouter();
     const [emergencyAlerts, setEmergencyAlerts] = useState<EmergencyAlert[]>([]);
+    const [floors, setFloors] = useState<Floor[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastUpdated, setLastUpdated] = useState('');
+
+    // 층수 데이터 가져오기
+    useEffect(() => {
+        const fetchFloors = async () => {
+            try {
+                setIsLoading(true);
+                // 층 정보를 가져오는 API 호출
+                const response = await API.floors.getAll();
+
+                if (response && response.length > 0) {
+                    setFloors(response);
+                } else {
+                    // API가 빈 배열을 반환하면 기본 데이터 사용
+                    setFloors([
+                        { id: 1, name: '1층' },
+                        { id: 2, name: '2층' },
+                        { id: 3, name: '3층' },
+                        { id: 4, name: '4층' },
+                        { id: 5, name: '5층' },
+                    ]);
+                }
+            } catch (err) {
+                console.error('층 정보 로딩 실패:', err);
+                // 백엔드가 없거나 오류 시 기본 층 데이터 사용
+                setFloors([
+                    { id: 1, name: '1층' },
+                    { id: 2, name: '2층' },
+                    { id: 3, name: '3층' },
+                    { id: 4, name: '4층' },
+                    { id: 5, name: '5층' },
+                ]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchFloors();
+    }, []);
 
     // 긴급 알림 데이터 가져오기
     useEffect(() => {
@@ -123,15 +166,35 @@ export default function Main() {
             {/* 층수 리스트 */}
             {floors.map((floor) => (
                 <TouchableOpacity
-                    key={floor}
+                    key={floor.id}
                     style={styles.floorButton}
-                    onPress={() => router.push(`/floor/${encodeURIComponent(floor)}`)}
+                    onPress={() => router.push(`/floor/${encodeURIComponent(floor.name)}`)}
                 >
-                    <Text style={styles.floorText}>{floor}</Text>
+                    <Text style={styles.floorText}>{floor.name}</Text>
                 </TouchableOpacity>
             ))}
 
             <Text style={styles.updatedAt}>마지막 업데이트: {lastUpdated || '-'}</Text>
+
+            <View style={styles.featuresContainer}>
+                {/* 건물 정보 기능 추가 */}
+                <View style={styles.feature}>
+                    <TouchableOpacity
+                        style={[styles.featureButton, { backgroundColor: '#4682B4' }]}
+                        onPress={() => {
+                            try {
+                                // @ts-ignore - 일시적으로 타입 에러 무시
+                                router.push('/building');
+                            } catch (error) {
+                                console.error('Navigation error:', error);
+                            }
+                        }}
+                    >
+                        <Ionicons name="business-outline" size={32} color="#FFF" />
+                    </TouchableOpacity>
+                    <Text style={styles.featureText}>병동 정보</Text>
+                </View>
+            </View>
         </ScrollView>
     );
 }
@@ -243,5 +306,22 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6b7280',
         marginBottom: 10,
+    },
+    featuresContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 20,
+    },
+    feature: {
+        alignItems: 'center',
+    },
+    featureButton: {
+        padding: 10,
+        borderRadius: 10,
+    },
+    featureText: {
+        marginTop: 5,
+        fontSize: 14,
+        color: '#6b7280',
     },
 });
