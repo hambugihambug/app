@@ -20,7 +20,7 @@ import SafeArea from '../../components/common/SafeArea';
 let API_URL;
 if (Platform.OS === 'ios') {
     // iOS 시뮬레이터는 localhost를 사용하거나 실제 IP 주소를 사용
-    API_URL = 'http://192.168.1.114:3000';
+    API_URL = 'http://192.168.1.112:3000';
 } else if (Platform.OS === 'android') {
     // 안드로이드 에뮬레이터는 10.0.2.2를 사용하여 호스트 머신에 접근
     API_URL = 'http://10.32.31.235:3000';

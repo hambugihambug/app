@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import API from '../../api';
 import SafeArea from '../../components/common/SafeArea';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 
 // 방 정보 인터페이스 정의
 interface RoomData {
@@ -344,11 +345,14 @@ export default function RoomDetail() {
                         <Ionicons name="videocam-outline" size={22} color="#1E6091" />
                         <Text style={styles.sectionTitle}>실시간 모니터링</Text>
                     </View>
-                    <Image
-                        source={{ uri: 'https://via.placeholder.com/350x200.png?text=CCTV+화면' }}
-                        style={styles.cctvImage}
-                        resizeMode="cover"
-                    />
+                    <View style={styles.cctvContainer}>
+                        <WebView
+                            source={{ uri: 'http://192.168.1.112:5050/stream' }}
+                            style={styles.cctvImage}
+                            javaScriptEnabled={true}
+                            domStorageEnabled={true}
+                        />
+                    </View>
                 </View>
 
                 {/* 병실 요약 정보 */}
@@ -607,9 +611,14 @@ const styles = StyleSheet.create({
         color: '#1E293B',
         marginLeft: 8,
     },
-    cctvImage: {
+    cctvContainer: {
         width: '100%',
         height: 220,
+        backgroundColor: '#E2E8F0',
+    },
+    cctvImage: {
+        width: '100%',
+        height: '100%',
         backgroundColor: '#E2E8F0',
     },
     patientListContainer: {
