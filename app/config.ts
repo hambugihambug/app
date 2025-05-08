@@ -9,7 +9,7 @@ const DEVELOPMENT_API_URL =
         : 'http://10.0.2.2:3000'; // Android 에뮬레이터
 
 // 실제 기기 또는 특정 네트워크에서 접속할 IP 주소
-const NETWORK_API_URL = 'http://10.32.31.237:3000';
+const NETWORK_API_URL = 'http://192.168.1.114:3000';
 
 // 실제 사용할 API URL - 개발 환경에서는 DEVELOPMENT_API_URL 사용
 const API_URL = __DEV__ ? DEVELOPMENT_API_URL : NETWORK_API_URL;

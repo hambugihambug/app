@@ -175,7 +175,7 @@ const API = {
 
                     // 앱에서 사용하는 형식으로 변환
                     return recentAlerts
-                        .filter((item) => item.accident_YN === 'Y')
+                        .filter((item) => item.accident_YN === 'Y' && item.accident_chYN === 'N')
                         .map((item) => ({
                             id: item.accident_id,
                             message: `🚨 ${item.room_name}호 ${item.patient_name} 환자 낙상 감지`,
@@ -209,6 +209,8 @@ const API = {
                         message: `⚠️ ${room.room_name}호 환경 이상 (온도: ${room.room_temp}°C, 습도: ${room.humidity}%)`,
                         roomId: room.room_name,
                         type: 'environmental',
+                        room_temp: room.room_temp,
+                        humidity: room.humidity,
                     }));
                 }
 
@@ -247,6 +249,18 @@ const API = {
                 console.error('알림 확인 처리 실패:', error);
                 // 임시로 성공 응답 반환
                 return { success: true };
+            }
+        },
+
+        // 낙상 알림 확인 처리 (accident_chYN 업데이트)
+        confirmAccident: async (accidentId) => {
+            try {
+                const response = await apiClient.put(`/fall-incidents/${accidentId}/confirm`);
+                console.log('낙상 알림 확인 처리 응답:', response.data);
+                return response.data;
+            } catch (error) {
+                console.error('낙상 알림 확인 처리 실패:', error);
+                throw error;
             }
         },
 

@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import axios, { AxiosError } from 'axios';
-import { Platform } from 'react-native';
+import axios from 'axios';
 import config from '../config';
+import { Ionicons } from '@expo/vector-icons';
+import SafeArea from '../../components/common/SafeArea';
 
 // API 서버 주소 설정
 let API_URL;
 if (Platform.OS === 'ios') {
     // iOS 시뮬레이터는 localhost를 사용하거나 실제 IP 주소를 사용
-    API_URL = 'http://10.32.31.235:3000';
+    API_URL = 'http://192.168.1.114:3000';
 } else if (Platform.OS === 'android') {
     // 안드로이드 에뮬레이터는 10.0.2.2를 사용하여 호스트 머신에 접근
     API_URL = 'http://10.32.31.235:3000';
@@ -19,7 +30,7 @@ if (Platform.OS === 'ios') {
 }
 
 // 실제 DB 서버 IP 주소 (네트워크 환경에 따라 다를 수 있음)
-const DB_SERVER_URL = 'http://10.32.31.235:3000';
+const DB_SERVER_URL = 'http://192.168.1.114:3000';
 
 export default function Signup() {
     const [email, setEmail] = useState('');
@@ -159,61 +170,98 @@ export default function Signup() {
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.container}>
-                <Text style={styles.title}>회원가입</Text>
+        <SafeArea>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.container}>
+                        <View style={styles.logoContainer}>
+                            <Ionicons name="medical" size={50} color="#1E6091" />
+                            <Text style={styles.logoText}>병원 모니터링 시스템</Text>
+                        </View>
 
-                <TextInput
-                    style={[styles.input, emailError ? styles.inputError : null]}
-                    placeholder="이메일"
-                    value={email}
-                    onChangeText={validateEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                />
-                {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+                        <View style={styles.formCard}>
+                            <Text style={styles.title}>회원가입</Text>
 
-                <TextInput
-                    style={[styles.input, nameError ? styles.inputError : null]}
-                    placeholder="이름"
-                    value={name}
-                    onChangeText={validateName}
-                    autoCapitalize="none"
-                />
-                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="mail-outline" size={22} color="#64748B" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, emailError ? styles.inputError : null]}
+                                    placeholder="이메일"
+                                    value={email}
+                                    onChangeText={validateEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-                <TextInput
-                    style={[styles.input, passwordError ? styles.inputError : null]}
-                    placeholder="비밀번호 (최소 8자, 문자, 숫자, 특수문자 포함)"
-                    value={password}
-                    onChangeText={validatePassword}
-                    secureTextEntry
-                    textContentType="oneTimeCode"
-                />
-                {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="person-outline" size={22} color="#64748B" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, nameError ? styles.inputError : null]}
+                                    placeholder="이름"
+                                    value={name}
+                                    onChangeText={validateName}
+                                    autoCapitalize="none"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
 
-                <TextInput
-                    style={[styles.input, confirmPasswordError ? styles.inputError : null]}
-                    placeholder="비밀번호 확인"
-                    value={confirmPassword}
-                    onChangeText={validateConfirmPassword}
-                    secureTextEntry
-                    textContentType="oneTimeCode"
-                />
-                {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+                            <View style={styles.inputContainer}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={22}
+                                    color="#64748B"
+                                    style={styles.inputIcon}
+                                />
+                                <TextInput
+                                    style={[styles.input, passwordError ? styles.inputError : null]}
+                                    placeholder="비밀번호 (최소 8자, 문자, 숫자, 특수문자 포함)"
+                                    value={password}
+                                    onChangeText={validatePassword}
+                                    secureTextEntry
+                                    textContentType="oneTimeCode"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-                <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-                    <Text style={styles.signupButtonText}>회원가입</Text>
-                </TouchableOpacity>
+                            <View style={styles.inputContainer}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={22}
+                                    color="#64748B"
+                                    style={styles.inputIcon}
+                                />
+                                <TextInput
+                                    style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+                                    placeholder="비밀번호 확인"
+                                    value={confirmPassword}
+                                    onChangeText={validateConfirmPassword}
+                                    secureTextEntry
+                                    textContentType="oneTimeCode"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
 
-                <View style={styles.loginContainer}>
-                    <Text style={styles.loginText}>이미 계정이 있으신가요? </Text>
-                    <TouchableOpacity onPress={navigateToLogin}>
-                        <Text style={styles.loginLink}>로그인</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </ScrollView>
+                            <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+                                <Text style={styles.signupButtonText}>회원가입</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>이미 계정이 있으신가요? </Text>
+                                <TouchableOpacity onPress={navigateToLogin}>
+                                    <Text style={styles.loginLink}>로그인</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeArea>
     );
 }
 
@@ -223,53 +271,91 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        justifyContent: 'center',
         padding: 20,
+        backgroundColor: '#F8FAFC',
     },
-    title: {
+    logoContainer: {
+        alignItems: 'center',
+        marginTop: 40,
+        marginBottom: 30,
+    },
+    logoText: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
+        color: '#1E6091',
+        marginTop: 10,
+    },
+    formCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+        marginBottom: 30,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 24,
+        color: '#1E293B',
         textAlign: 'center',
     },
-    input: {
-        height: 50,
-        borderColor: 'gray',
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         borderWidth: 1,
-        marginBottom: 5,
+        borderColor: '#E2E8F0',
+        borderRadius: 8,
+        marginBottom: 12,
+        backgroundColor: '#F8FAFC',
+    },
+    inputIcon: {
+        padding: 10,
+    },
+    input: {
+        flex: 1,
+        height: 50,
         paddingHorizontal: 10,
-        borderRadius: 5,
+        color: '#0F172A',
     },
     inputError: {
-        borderColor: 'red',
+        borderColor: '#E11D48',
     },
     errorText: {
-        color: 'red',
+        color: '#E11D48',
         fontSize: 12,
         marginBottom: 10,
         marginLeft: 5,
     },
     signupButton: {
-        backgroundColor: '#007bff',
+        backgroundColor: '#1E6091',
         padding: 15,
-        borderRadius: 5,
+        borderRadius: 8,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 20,
+        marginBottom: 16,
     },
     signupButtonText: {
         color: 'white',
         fontWeight: 'bold',
+        fontSize: 16,
     },
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 15,
+        marginTop: 8,
     },
     loginText: {
-        color: '#666',
+        color: '#64748B',
     },
     loginLink: {
-        color: '#007bff',
+        color: '#1E6091',
         fontWeight: 'bold',
     },
 });

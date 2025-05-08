@@ -1,7 +1,12 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { useState, useEffect } from 'react';
 import API from '../../api';
+import { Ionicons } from '@expo/vector-icons';
+import SafeArea from '../../components/common/SafeArea';
+
+// 화면 너비 가져오기
+const { width } = Dimensions.get('window');
 
 // 병실 데이터 타입 정의
 interface Room {
@@ -30,14 +35,44 @@ interface Patient {
     bed_number?: string;
 }
 
-// 상태별 스타일 정의
-const statusStyles = {
-    정상: { backgroundColor: '#fff', borderColor: '#2b4c86' },
-    주의: { backgroundColor: '#fef3c7', borderColor: '#d97706' }, // 주의: 노랑
-    경고: { backgroundColor: '#fee2e2', borderColor: '#dc2626' }, // 경고: 빨강
-    normal: { backgroundColor: '#fff', borderColor: '#2b4c86' }, // 기본값
-    caution: { backgroundColor: '#fef3c7', borderColor: '#d97706' }, // 영문 대체값
-    warning: { backgroundColor: '#fee2e2', borderColor: '#dc2626' }, // 영문 대체값
+// 상태별 스타일과 아이콘 정의
+const statusConfig = {
+    정상: {
+        backgroundColor: '#EBF4FF',
+        borderColor: '#1E6091',
+        textColor: '#1E6091',
+        icon: 'checkmark-circle' as const,
+    },
+    주의: {
+        backgroundColor: '#FEF9C3',
+        borderColor: '#CA8A04',
+        textColor: '#854D0E',
+        icon: 'alert-circle' as const,
+    },
+    경고: {
+        backgroundColor: '#FEE2E2',
+        borderColor: '#DC2626',
+        textColor: '#B91C1C',
+        icon: 'warning' as const,
+    },
+    normal: {
+        backgroundColor: '#EBF4FF',
+        borderColor: '#1E6091',
+        textColor: '#1E6091',
+        icon: 'checkmark-circle' as const,
+    },
+    caution: {
+        backgroundColor: '#FEF9C3',
+        borderColor: '#CA8A04',
+        textColor: '#854D0E',
+        icon: 'alert-circle' as const,
+    },
+    warning: {
+        backgroundColor: '#FEE2E2',
+        borderColor: '#DC2626',
+        textColor: '#B91C1C',
+        icon: 'warning' as const,
+    },
 };
 
 export default function FloorPage() {
@@ -86,133 +121,295 @@ export default function FloorPage() {
 
     // 상태에 따른 스타일 구하는 함수
     const getStatusStyle = (status: string) => {
-        const key = status as keyof typeof statusStyles;
-        return statusStyles[key] || statusStyles.normal;
+        const key = status as keyof typeof statusConfig;
+        return statusConfig[key] || statusConfig.normal;
+    };
+
+    // 아이콘 가져오기
+    const getStatusIcon = (status: string) => {
+        const key = status as keyof typeof statusConfig;
+        return statusConfig[key]?.icon || statusConfig.normal.icon;
+    };
+
+    // 텍스트 색상 가져오기
+    const getTextColor = (status: string) => {
+        const key = status as keyof typeof statusConfig;
+        return statusConfig[key]?.textColor || statusConfig.normal.textColor;
     };
 
     if (isLoading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4f46e5" />
-                <Text style={styles.loadingText}>병실 정보를 불러오는 중...</Text>
-            </View>
+            <SafeArea>
+                <Stack.Screen
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#1E6091" />
+                    <Text style={styles.loadingText}>병실 정보를 불러오는 중...</Text>
+                </View>
+            </SafeArea>
         );
     }
 
     if (error && rooms.length === 0) {
         return (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-            </View>
+            <SafeArea>
+                <Stack.Screen
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+            </SafeArea>
         );
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>{floor} 병실</Text>
+        <SafeArea>
+            <Stack.Screen
+                options={{
+                    headerShown: false,
+                }}
+            />
+            <View style={styles.headerContainer}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Ionicons name="chevron-back" size={24} color="#1E6091" />
+                </TouchableOpacity>
+                <Text style={styles.title}>{floor} 병실</Text>
+                <View style={styles.placeholder} />
+            </View>
 
             {isDummy && (
                 <View style={styles.dummyBanner}>
-                    <Text style={styles.dummyText}>⚠️ 현재 더미 데이터가 표시되고 있습니다</Text>
+                    <Ionicons name="information-circle" size={18} color="#854D0E" />
+                    <Text style={styles.dummyText}>현재 더미 데이터가 표시되고 있습니다</Text>
                 </View>
             )}
 
-            {rooms.length === 0 ? (
-                <Text style={styles.noDataText}>이 층에 등록된 병실이 없습니다.</Text>
-            ) : (
-                <View style={styles.roomGrid}>
-                    {rooms.map((room) => (
-                        <TouchableOpacity
-                            key={room.id}
-                            style={[styles.roomBox, getStatusStyle(room.status)]}
-                            onPress={() => router.push(`/room/${room.name}`)}
-                        >
-                            <Text style={styles.roomText}>{room.name}</Text>
-                            {room.status !== '정상' && room.status !== 'normal' && (
-                                <Text style={styles.statusLabel}>⚠️ {room.status}</Text>
-                            )}
-                            <Text style={styles.patientCount}>
-                                입원: {Array.isArray(room.patients) ? room.patients.length : room.patient_count || 0}명
-                                {room.temperature && ` | ${room.temperature}°C`}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
-        </ScrollView>
+            <ScrollView contentContainerStyle={styles.container}>
+                {rooms.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="bed-outline" size={64} color="#94A3B8" />
+                        <Text style={styles.noDataText}>이 층에 등록된 병실이 없습니다.</Text>
+                    </View>
+                ) : (
+                    <View style={styles.roomList}>
+                        {rooms.map((room) => {
+                            const statusStyle = getStatusStyle(room.status);
+                            const textColor = getTextColor(room.status);
+
+                            return (
+                                <TouchableOpacity
+                                    key={room.id}
+                                    style={styles.roomCard}
+                                    onPress={() => router.push(`/room/${room.name}`)}
+                                >
+                                    <View style={styles.roomCardHeader}>
+                                        <Text style={styles.roomNumber}>{room.name}</Text>
+                                        <View
+                                            style={[
+                                                styles.statusBadge,
+                                                { backgroundColor: getStatusBgColor(room.status) },
+                                            ]}
+                                        >
+                                            <Text style={[styles.statusText, { color: getStatusColor(room.status) }]}>
+                                                {room.status}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.roomCardContent}>
+                                        <View style={styles.infoItem}>
+                                            <Ionicons name="thermometer-outline" size={18} color="#FF9500" />
+                                            <Text style={styles.infoText}>{room.temperature || '-- '}°C</Text>
+                                        </View>
+
+                                        <View style={styles.infoItem}>
+                                            <Ionicons name="water-outline" size={18} color="#0A84FF" />
+                                            <Text style={styles.infoText}>{room.humidity || '-- '}%</Text>
+                                        </View>
+
+                                        <View style={styles.infoItem}>
+                                            <Ionicons name="bed-outline" size={18} color="#64748B" />
+                                            <Text style={styles.infoText}>
+                                                {Array.isArray(room.patients)
+                                                    ? `${room.patients.length}/4`
+                                                    : `${room.patient_count || 0}/4`}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                )}
+            </ScrollView>
+        </SafeArea>
     );
 }
 
+// 상태에 따른 색상 반환 함수
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case '정상':
+            return '#2C9E3F';
+        case '주의':
+            return '#CA8A04';
+        case '경고':
+            return '#DC2626';
+        default:
+            return '#2C9E3F';
+    }
+};
+
+// 상태에 따른 배경색 반환 함수
+const getStatusBgColor = (status: string) => {
+    switch (status) {
+        case '정상':
+            return '#ECFDF5';
+        case '주의':
+            return '#FEF9C3';
+        case '경고':
+            return '#FEE2E2';
+        default:
+            return '#ECFDF5';
+    }
+};
+
 const styles = StyleSheet.create({
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+    },
+    backButton: {
+        padding: 8,
+    },
+    placeholder: {
+        width: 40,
+    },
     container: {
         flexGrow: 1,
-        backgroundColor: '#f9fafb',
-        padding: 20,
+        backgroundColor: '#F8FAFC',
+        padding: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
     },
     loadingText: {
         marginTop: 10,
-        color: '#6b7280',
+        color: '#1E6091',
         fontSize: 16,
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
         padding: 20,
     },
     errorText: {
-        color: '#dc2626',
+        color: '#E11D48',
         fontSize: 16,
+        fontWeight: '500',
         textAlign: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 80,
     },
     noDataText: {
         fontSize: 16,
-        color: '#6b7280',
+        color: '#64748B',
         textAlign: 'center',
-        marginTop: 40,
+        marginTop: 16,
     },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-    roomGrid: {
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1E6091',
+        textAlign: 'center',
+    },
+    roomList: {
+        width: '100%',
+    },
+    roomCard: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    roomCardHeader: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-        justifyContent: 'flex-start',
-    },
-    roomBox: {
-        width: '22%',
-        aspectRatio: 1,
-        borderWidth: 2,
-        borderRadius: 10,
+        justifyContent: 'space-between',
         alignItems: 'center',
-        justifyContent: 'center',
-        margin: '1%',
-        padding: 5,
+        marginBottom: 14,
     },
-    roomText: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-    statusLabel: { fontSize: 12 },
-    patientCount: {
-        fontSize: 10,
-        color: '#4b5563',
-        marginTop: 3,
+    roomNumber: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    roomCardContent: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        marginTop: 10,
+    },
+    infoItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 24,
+    },
+    infoText: {
+        fontSize: 16,
+        marginLeft: 6,
+        color: '#4B5563',
+        fontWeight: '500',
     },
     dummyBanner: {
-        backgroundColor: '#fef3c7',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FEF9C3',
         padding: 8,
         borderRadius: 8,
-        marginBottom: 16,
+        margin: 16,
+        marginTop: 0,
         borderWidth: 1,
-        borderColor: '#d97706',
+        borderColor: '#CA8A04',
     },
     dummyText: {
         fontSize: 14,
-        color: '#92400e',
-        textAlign: 'center',
+        color: '#854D0E',
+        marginLeft: 8,
     },
 });

@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import config from '../config';
+import { Ionicons } from '@expo/vector-icons';
+import SafeArea from '../../components/common/SafeArea';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -71,6 +83,10 @@ export default function Login() {
                 await AsyncStorage.setItem('userId', response.data.user_id.toString());
                 await AsyncStorage.setItem('userRole', response.data.user_role || 'user');
 
+                // 마이페이지에서 사용할 추가 정보 저장
+                await AsyncStorage.setItem('userEmail', email);
+                await AsyncStorage.setItem('userName', response.data.user_name || email.split('@')[0]);
+
                 // 메인 화면으로 이동
                 router.replace('/(tabs)');
             } else {
@@ -87,91 +103,158 @@ export default function Login() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>로그인</Text>
-            <TextInput
-                style={[styles.input, emailError ? styles.inputError : null]}
-                placeholder="이메일"
-                value={email}
-                onChangeText={validateEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-            />
-            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+        <SafeArea>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.container}>
+                        <View style={styles.logoContainer}>
+                            <Ionicons name="medical" size={50} color="#1E6091" />
+                            <Text style={styles.logoText}>병원 모니터링 시스템</Text>
+                        </View>
 
-            <TextInput
-                style={[styles.input, passwordError ? styles.inputError : null]}
-                placeholder="비밀번호"
-                value={password}
-                onChangeText={validatePassword}
-                secureTextEntry
-            />
-            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                        <View style={styles.formCard}>
+                            <Text style={styles.title}>로그인</Text>
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                <Text style={styles.loginButtonText}>로그인</Text>
-            </TouchableOpacity>
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="mail-outline" size={22} color="#64748B" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, emailError ? styles.inputError : null]}
+                                    placeholder="이메일"
+                                    value={email}
+                                    onChangeText={validateEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-            <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>아이디가 없으신가요? </Text>
-                <TouchableOpacity onPress={navigateToSignup}>
-                    <Text style={styles.signupLink}>회원가입</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+                            <View style={styles.inputContainer}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={22}
+                                    color="#64748B"
+                                    style={styles.inputIcon}
+                                />
+                                <TextInput
+                                    style={[styles.input, passwordError ? styles.inputError : null]}
+                                    placeholder="비밀번호"
+                                    value={password}
+                                    onChangeText={validatePassword}
+                                    secureTextEntry
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+                            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                                <Text style={styles.loginButtonText}>로그인</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.signupContainer}>
+                                <Text style={styles.signupText}>아이디가 없으신가요? </Text>
+                                <TouchableOpacity onPress={navigateToSignup}>
+                                    <Text style={styles.signupLink}>회원가입</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeArea>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollContainer: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
-        justifyContent: 'center',
         padding: 20,
+        backgroundColor: '#F8FAFC',
     },
-    title: {
+    logoContainer: {
+        alignItems: 'center',
+        marginTop: 40,
+        marginBottom: 30,
+    },
+    logoText: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
+        color: '#1E6091',
+        marginTop: 10,
+    },
+    formCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 24,
+        color: '#1E293B',
         textAlign: 'center',
     },
-    input: {
-        height: 50,
-        borderColor: 'gray',
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         borderWidth: 1,
-        marginBottom: 5,
+        borderColor: '#E2E8F0',
+        borderRadius: 8,
+        marginBottom: 12,
+        backgroundColor: '#F8FAFC',
+    },
+    inputIcon: {
+        padding: 10,
+    },
+    input: {
+        flex: 1,
+        height: 50,
         paddingHorizontal: 10,
-        borderRadius: 5,
+        color: '#0F172A',
     },
     inputError: {
-        borderColor: 'red',
+        borderColor: '#E11D48',
     },
     errorText: {
-        color: 'red',
+        color: '#E11D48',
         fontSize: 12,
         marginBottom: 10,
         marginLeft: 5,
     },
     loginButton: {
-        backgroundColor: '#007bff',
+        backgroundColor: '#1E6091',
         padding: 15,
-        borderRadius: 5,
+        borderRadius: 8,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 20,
+        marginBottom: 16,
     },
     loginButtonText: {
         color: 'white',
         fontWeight: 'bold',
+        fontSize: 16,
     },
     signupContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 15,
+        marginTop: 8,
     },
     signupText: {
-        color: '#666',
+        color: '#64748B',
     },
     signupLink: {
-        color: '#007bff',
+        color: '#1E6091',
         fontWeight: 'bold',
     },
 });
